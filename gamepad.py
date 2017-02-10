@@ -1,3 +1,6 @@
+import math
+
+
 class Gamepad:
 
     def __init__(self):
@@ -16,10 +19,9 @@ class Gamepad:
         if (device == "joystick_right_y"):
             return self.joystick_right_y
         else:
-            raise KeyError("Cannot find input: " + deivce)
+            raise KeyError("Cannot find input: " + device)
 
-
-    def godmode(self, input, value):
+    def godmode(self, device, value):
         if value > 1.0 or value < -1.0:
             raise ValueError("Value cannot be great than 1.0 or less than -1.0.")
         if (device == "joystick_left_x"):
@@ -31,13 +33,13 @@ class Gamepad:
         elif (device == "joystick_right_y"):
             self.joystick_right_y = value
         else:
-            raise KeyError("Cannot find input: " + deivce)
+            raise KeyError("Cannot find input: " + device)
 
     def ltheta(self):
-        return self.theta(self.joystick_left_x, self.joystick_left_y)
+        return Gamepad.theta(self.joystick_left_x, self.joystick_left_y)
 
     def rtheta(self):
-        return self.theta(self.joystick_right_x, self.joystick_right_y)
+        return Gamepad.theta(self.joystick_right_x, self.joystick_right_y)
 
     def theta(x, y):
         if (x == 0 and y == 0):

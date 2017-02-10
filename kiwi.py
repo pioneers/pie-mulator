@@ -81,7 +81,7 @@ class Camera:
 
         theta %= 360
         result = Camera.base.copy()
-        state = (round(theta / 45.0) - 2) % 8
+        state = (round(theta / 45.0) + 2) % 8
 
         result[2 * Camera.width + 4] = "*"
 
@@ -236,8 +236,8 @@ if __name__ == "__main__":
 
     while True:
         r.set_value("left_motor", 1)
-        r.set_value("right_motor", 1)
-        g.godmode("left_joystick_x", .3)
+        r.set_value("right_motor", -1)
+        g.godmode("joystick_left_x", .3)
         r.update_position()
         s.draw()
         time.sleep(r.tick_rate)
