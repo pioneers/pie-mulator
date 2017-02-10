@@ -3,46 +3,55 @@ import time
 
 class Robot:
     tick_rate = 0.1            #in s
-    width = 4                   #width of robot
-    w_radius = 0.67                #radius of a wheel
-    MAX_X = 47
-    MAX_Y = 47
+    width = 12                   #width of robot
+    w_radius = 2               #radius of a wheel
+    MAX_X = 143
+    MAX_Y = 143
+    neg = -1                    #negate left motor calculation
     def __init__ (self):
-        self.X = 24.0           #X position of the robot
-        self.Y = 24.0           #Y position of the robot
+        self.X = 72.0           #X position of the robot
+        self.Y = 72.0           #Y position of the robot
         self.Wl = 0.0           #angular velocity of l wheel, degree/s
         self.Wr = 0.0           #angular velocity of r wheel, degree/s
         self.ltheta = 0.0       #angular position of l wheel, in degree
         self.rtheta = 0.0       #angular position of r wheel, in degree
-        self.dir = 45           #Direction of the robot facing,in degree
+        self.dir = 90.0           #Direction of the robot facing,in degree
 
-
+    """ DifferentialDrive Calculation Credits to:
+    https://chess.eecs.berkeley.edu/eecs149/documentation/differentialDrive.pdf
+    """
     def update_position(self):
-        self.ltheta = (self.ltheta + self.Wl * Robot.tick_rate)%360
-        self.rtheta = (self.rtheta + self.Wr * Robot.tick_rate)%360
-        lv = self.Wl * Robot.w_radius
+        lv = self.Wl * Robot.w_radius * Robot.neg
         rv = self.Wr * Robot.w_radius
-        rt = Robot.width/2 * (lv+rv)/(rv-lv)
-        Wt = (rv-lv)/Robot.width
-        theta = Wt* Robot.tick_rate
-        i = rt * (1 - math.cos(theta))
-        j = math.sin(theta)* rt
-        dx = i*math.sin(self.dir) + j*math.cos(self.dir)
-        dy = i*math.cos(self.dir) + j*math.sin(self.dir)
+        radian = math.radians(self.dir)
+        if (lv == rv):
+            distance = rv * Robot.tick_rate
+            dx = distance *math.cos(radian)
+            dy = distance *math.sin(radian)
+            print(dx)
+            print(dy)
+        else:
+            rt = Robot.width/2 * (lv+rv)/(rv-lv)
+            Wt = (rv-lv)/Robot.width
+            theta = Wt* Robot.tick_rate
+            i = rt * (1 - math.cos(theta))
+            j = math.sin(theta)* rt
+            dx = i*math.sin(radian) + j*math.cos(radian)
+            dy = i*math.cos(radian) + j*math.sin(radian)
+            self.dir = (self.dir + math.degrees(theta))%360
+
         self.X = max(min(self.X + dx, Robot.MAX_X),0)
         self.Y = max(min(self.Y + dy, Robot.MAX_Y),0)
-        self.dir = (self.dir + theta)%360
-
-        self.ltheta = (self.Wl * 15+ self.ltheta) % 360
-        self.rtheta = (self.Wr * 15+ self.rtheta) % 360
+        self.ltheta = (self.Wl * 5+ self.ltheta) % 360
+        self.rtheta = (self.Wr * 5+ self.rtheta) % 360
 
     def set_value(self, device, speed):
         if speed > 1.0 or speed < -1.0:
             raise ValueError("Speed cannot be great than 1.0 or less than -1.0.")
         if (device == "left_motor"):
-            self.Wl = -speed * 3
+            self.Wl = speed * 9
         elif device == "right_motor":
-            self.Wr = speed * 3
+            self.Wr = speed * 9
         else :
             raise KeyError("Cannot find device name: " + device)
 
@@ -97,32 +106,34 @@ class MenuBar:
 
 class Screen:
     """A visual representation of the field and menu"""
-    SCREEN_HEIGHT = 48
-    SCREEN_WIDTH = 48
+    SCREEN_HEIGHT = 48.0
+    SCREEN_WIDTH = 48.0
 
     def __init__(self, robot):
         self.robot = robot
 
     def draw(self):
-        for y in range(Screen.SCREEN_HEIGHT):
-            line = ["."] * Screen.SCREEN_WIDTH
-            for x in range(Screen.SCREEN_WIDTH):
-                if (self.robot.X // 1 == x and self.robot.Y // 1 == y):
+        k = Screen.SCREEN_HEIGHT/144.0 #screen scaling coefficient
+        # print (self.robot.X*k)
+        for y in range(int(Screen.SCREEN_HEIGHT)):
+            line = ["."] * int(Screen.SCREEN_WIDTH)
+            for x in range(int(Screen.SCREEN_WIDTH)):
+                if ((self.robot.X*k)//1 == x and (self.robot.Y*k)// 1 == y):
                     line[x] = "@"
             print(' '.join(line))
-        print("__"* Screen.SCREEN_WIDTH)
+        print("__"* int(Screen.SCREEN_WIDTH))
 
 if __name__ == "__main__":
     r = Robot()
     w = Wheel(r)
     s = Screen(r)
     while True:
-        r.set_value("left_motor", 1)
-        r.set_value("right_motor", 0)
+        r.set_value("left_motor", -1)
+        r.set_value("right_motor", 1)
         r.update_position()
         s.draw()
         w.printer(w.img())
-        # print "X = " + str(r.X)
-        # print "Y = " + str(r.Y)
+        print "X = " + str(r.X)
+        print "Y = " + str(r.Y)
         # print r.ltheta
         time.sleep(r.tick_rate)
