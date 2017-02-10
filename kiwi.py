@@ -184,8 +184,8 @@ class Camera:
 class Screen:
     """A visual representation of the field and menu"""
 
-    SCREEN_HEIGHT = 48.0
-    SCREEN_WIDTH = 48.0
+    SCREEN_HEIGHT = 48
+    SCREEN_WIDTH = 48
 
     def __init__(self, robot, gamepad):
         self.robot = robot
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     s = Screen(r, g)
 
     while True:
-        r.set_value("left_motor", 1)
+        r.set_value("left_motor", -1)
         r.set_value("right_motor", .5)
         r.update_position()
         s.draw()
