@@ -2,7 +2,6 @@ import math
 import time
 from gamepad import *
 
-JOYSTICK_NEUTRAL = "Neutral"
 
 
 class Robot:
@@ -53,7 +52,7 @@ class Robot:
     def set_value(self, device, speed):
         if speed > 1.0 or speed < -1.0:
             raise ValueError("Speed cannot be great than 1.0 or less than -1.0.")
-        if (device == "left_motor"):
+        if device == "left_motor":
             self.Wl = speed * 9
         elif device == "right_motor":
             self.Wr = speed * 9
@@ -63,6 +62,7 @@ class Robot:
 
 class Camera:
     """Create images of parts of the robot in a select format"""
+    JOYSTICK_NEUTRAL = "Neutral"
     wheel_base = list("* - - - *|       ||   x   ||       |* - - - *")
     width = 9
     base = list(" " * (5 * width))
