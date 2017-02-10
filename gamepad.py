@@ -33,4 +33,32 @@ class Gamepad
             raise KeyError("Cannot find input: " + deivce)
 
     def ltheta(self):
-        return math.degrees(math.atan(self.joystick_left_y/self.joystick_left_x))
+        x = self.joystick_left_x
+        y = self.joystick_left_y
+        if (x == 0 and y == 0):
+            return "Neutral"
+        theta = math.degrees(math.atan(y / x))
+        if x = 0:
+            if y > 0:
+                return 90.0
+            else:
+                return 270.0
+        elif x > 0:
+            return theta
+        else:
+            return theta + 180.0
+    def rtheta(self):
+        x = self.joystick_right_x
+        y = self.joystick_right_y
+        if (x == 0 and y == 0):
+            return "Neutral"
+        theta = math.degrees(math.atan(y / x))
+        if x = 0:
+            if y > 0:
+                return 90.0
+            else:
+                return 270.0
+        elif x > 0:
+            return theta
+        else:
+            return theta + 180.0
