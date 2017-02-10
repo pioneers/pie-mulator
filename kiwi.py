@@ -3,7 +3,6 @@ import time
 from gamepad import *
 
 
-
 class Robot:
     """The MODEL for this simulator. Stores robot data and handles position
        calculations & Runtime API calls """
@@ -77,12 +76,12 @@ class Camera:
 
     def direction(theta):
         """Generate a string that indicates pointing in a theta direction"""
-        if theta == JOYSTICK_NEUTRAL:
+        if theta == Camera.JOYSTICK_NEUTRAL:
             return Camera.base
 
         theta %= 360
         result = Camera.base.copy()
-        state = round(theta / 45.0) % 8
+        state = (round(theta / 45.0) - 2) % 8
 
         result[2 * Camera.width + 4] = "*"
 
@@ -214,6 +213,7 @@ class Screen:
         menu_bar_items.append(self.camera.right_wheel())
         menu_bar_items.append(self.camera.left_wheel())
         menu_bar_items.append(self.camera.robot_direction())
+        menu_bar_items.append(self.camera.left_joystick())
         Camera.printer(Screen.combiner(menu_bar_items))
 
     def draw(self):
@@ -236,7 +236,8 @@ if __name__ == "__main__":
 
     while True:
         r.set_value("left_motor", 1)
-        r.set_value("right_motor", .5)
+        r.set_value("right_motor", 1)
+        g.godmode("left_joystick_x", .3)
         r.update_position()
         s.draw()
         time.sleep(r.tick_rate)
