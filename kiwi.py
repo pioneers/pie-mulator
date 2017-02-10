@@ -62,7 +62,7 @@ class Robot:
 
 
 class Camera:
-    """Creates images of parts of the robot in a select format"""
+    """Create images of parts of the robot in a select format"""
     wheel_base = list("* - - - *|       ||   x   ||       |* - - - *")
     width = 9
     base = list(" " * (5 * width))
@@ -72,7 +72,7 @@ class Camera:
         self.gamepad = gamepad
 
     def direction(theta):
-        """Generates a string that indicates pointing in a theta direction"""
+        """Generate a string that indicates pointing in a theta direction"""
         if theta == JOYSTICK_NEUTRAL:
             return Camera.base
 
@@ -111,19 +111,19 @@ class Camera:
         return Camera.str_format(result)
 
     def robot_direction(self):
-        """Returns a list of strings picturing the direction the robot is traveling in from an overhead view"""
+        """Return a list of strings picturing the direction the robot is traveling in from an overhead view"""
         return Camera.direction(self.robot.dir)
 
     def left_joystick(self):
-        """Returns a list of strings picturing the left joystick of the gamepad"""
+        """Return a list of strings picturing the left joystick of the gamepad"""
         return Camera.direction(self.gamepad.ltheta())
 
     def right_joystick(self):
-        """Returns a list of strings picturing the right joystick of the gamepad"""
+        """Return a list of strings picturing the right joystick of the gamepad"""
         return Camera.direction(self.gamepad.rtheta())
 
     def wheel(theta):
-        """Generates a string picturing a wheel at position theta
+        """Generate a string picturing a wheel at position theta
 
         Args:
             theta (float): the angular displacement of the wheel
@@ -152,18 +152,19 @@ class Camera:
         return Camera.str_format(result)
 
     def right_wheel(self):
-        """Returns a list of strings picturing the right wheel"""
+        """Return a list of strings picturing the right wheel"""
         return Camera.wheel(self.robot.rtheta)
 
     def left_wheel(self):
-        """Returns a list of strings picturing the left wheel"""
+        """Return a list of strings picturing the left wheel"""
         return Camera.wheel(self.robot.ltheta)
 
     def str_format(list_img):
-        """Returns a list of 5 strings of length 9
+        """Return a list of 5 strings each of length 9
 
         Args:
-            list_img: """
+            list_img: A list of 5 * 9 characters
+        """
         result = []
         for y in range(5):
             segment = list_img[y * Camera.width:(y + 1) * Camera.width]
@@ -171,6 +172,7 @@ class Camera:
         return result
 
     def printer(formatted_list):
+        """Print a list of strings to graphically resemble it"""
         for x in formatted_list:
             print(x)
 
@@ -187,7 +189,12 @@ class Screen:
         self.camera = Camera(self.robot, self.gamepad)
 
     def combiner(parts_list):
-        """Creates a list of 5 strings that make up the menu_bar"""
+        """Return a list of 5 strings that make up the menu_bar.
+
+        args:
+            parts_list: a list where each element is a list of 5 strings picturing an element
+        """
+
         result = []
         for y in range(5):
             pre_segment = []
@@ -198,7 +205,7 @@ class Screen:
         return result
 
     def menu_bar(self):
-        """Prints out the menubar"""
+        """Print out the menubar."""
         menu_bar_items = []
         menu_bar_items.append(self.camera.right_wheel())
         menu_bar_items.append(self.camera.left_wheel())
@@ -206,6 +213,7 @@ class Screen:
         Camera.printer(Screen.combiner(menu_bar_items))
 
     def draw(self):
+        """Draw the screen."""
         self.menu_bar()
         k = Screen.SCREEN_HEIGHT / 144.0  # screen scaling coefficient
         # print (self.robot.X*k)
