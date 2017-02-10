@@ -1,4 +1,5 @@
-class Gamepad
+class Gamepad:
+
     def __init__(self):
         self.joystick_left_x = 0
         self.joystick_left_y = 0

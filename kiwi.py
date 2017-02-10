@@ -1,5 +1,6 @@
 import math
 import time
+from gamepad import *
 
 JOYSTICK_NEUTRAL = "Neutral"
 
