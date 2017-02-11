@@ -12,6 +12,7 @@ class Robot:
     MAX_X = 143                 # maximum X value, inches, field is 12'x12'
     MAX_Y = 143                 # maximum Y value, inches, field is 12'x12'
     neg = -1                    # negate left motor calculation
+    symbol = '@'                # the character representation of the robot on the field
 
     def __init__(self):
         self.X = 72.0           # X position of the robot
@@ -20,7 +21,7 @@ class Robot:
         self.Wr = 0.0           # angular velocity of r wheel, degree/s
         self.ltheta = 0.0       # angular position of l wheel, degree
         self.rtheta = 0.0       # angular position of r wheel, degree
-        self.dir = 45.0         # Direction of the robot facing, degree
+        self.dir = 0.0         # Direction of the robot facing, degree
 
     """ Differential Drive Calculation Reference:
     https://chess.eecs.berkeley.edu/eecs149/documentation/differentialDrive.pdf
@@ -73,16 +74,17 @@ class Camera:
         self.robot = robot
         self.gamepad = gamepad
 
-    def direction(theta):
+    def direction(theta, label='*'):
         """Generate a string that indicates pointing in a theta direction"""
+        result = Camera.base.copy()
+        result[2 * Camera.width + 4] = label
         if theta == Camera.JOYSTICK_NEUTRAL:
-            return Camera.base
+            return Camera.str_format(result)
 
         theta %= 360
-        result = Camera.base.copy()
-        state = (round(theta / 45.0) ) % 8
+        state = (round(theta / 45.0)) % 8
 
-        result[2 * Camera.width + 4] = "*"
+        result[2 * Camera.width + 4] = label
 
         if state == 0:
             result[2 * Camera.width + 5] = "-"
@@ -111,22 +113,21 @@ class Camera:
             result[3 * Camera.width + 6] = "\\"
             result[4 * Camera.width + 8] = "\\"
 
-
         return Camera.str_format(result)
 
     def robot_direction(self):
         """Return a list of strings picturing the direction the robot is traveling in from an overhead view"""
-        return Camera.direction(self.robot.dir)
+        return Camera.direction(self.robot.dir, Robot.symbol)
 
     def left_joystick(self):
         """Return a list of strings picturing the left joystick of the gamepad"""
-        return Camera.direction(self.gamepad.ltheta())
+        return Camera.direction(self.gamepad.ltheta(), 'L')
 
     def right_joystick(self):
         """Return a list of strings picturing the right joystick of the gamepad"""
-        return Camera.direction(self.gamepad.rtheta())
+        return Camera.direction(self.gamepad.rtheta(), 'R')
 
-    def wheel(theta):
+    def wheel(theta, label='*'):
         """Generate a string picturing a wheel at position theta
 
         Args:
@@ -134,6 +135,7 @@ class Camera:
         """
 
         result = Camera.wheel_base.copy()
+        result[2 * Camera.width + 4] = label
         state = round(theta / 45.0) % 8
 
         if state == 0:
@@ -157,11 +159,11 @@ class Camera:
 
     def right_wheel(self):
         """Return a list of strings picturing the right wheel"""
-        return Camera.wheel(self.robot.rtheta)
+        return Camera.wheel(self.robot.rtheta, 'R')
 
     def left_wheel(self):
         """Return a list of strings picturing the left wheel"""
-        return Camera.wheel(self.robot.ltheta)
+        return Camera.wheel(self.robot.ltheta, 'L')
 
     def str_format(list_img):
         """Return a list of 5 strings each of length 9
@@ -211,14 +213,27 @@ class Screen:
     def menu_bar(self):
         """Print out the menubar."""
         menu_bar_items = []
-        menu_bar_items.append(self.camera.right_wheel())
         menu_bar_items.append(self.camera.left_wheel())
-        menu_bar_items.append(self.camera.robot_direction())
+        menu_bar_items.append(self.camera.right_wheel())
         menu_bar_items.append(self.camera.left_joystick())
+        menu_bar_items.append(self.camera.right_joystick())
         Camera.printer(Screen.combiner(menu_bar_items))
+
+    def clear_screen():
+        """Clear the previously drawn field"""
+        for x in range(40):
+            print()
+
+    def symbol(self):
+        """Returns a symbol that indicates the robots direction"""
+        robot_theta = self.robot.dir
+        index = round(robot_theta / 45) % 8
+        symbols = ['\u2192', '\u2197', '\u2191', '\u2196', '\u2190', '\u2199', '\u2193', '\u2198']
+        return symbols[index]
 
     def draw(self):
         """Draw the screen."""
+        Screen.clear_screen()
         self.menu_bar()
         k = Screen.SCREEN_HEIGHT / 144.0  # screen scaling coefficient
         # print (self.robot.X*k)
@@ -226,9 +241,10 @@ class Screen:
             line = ["."] * int(Screen.SCREEN_WIDTH)
             for x in range(int(Screen.SCREEN_WIDTH)):
                 if ((self.robot.X * k) // 1 == x and (self.robot.Y * k) // 1 == y):
-                    line[x] = "@"
+                    line[x] = self.symbol()
             print(' '.join(line))
         print("__" * int(Screen.SCREEN_WIDTH))
+        print("X: %s, Y: %s, Theta: %s" % (self.robot.X, self.robot.Y, self.robot.dir))
 
 if __name__ == "__main__":
     r = Robot()
@@ -236,10 +252,10 @@ if __name__ == "__main__":
     s = Screen(r, g)
 
     while True:
-        r.set_value("left_motor", -1)
+        r.set_value("left_motor", -0.66)
         r.set_value("right_motor", 1)
-        g.godmode("joystick_left_x", 0.5)
-        g.godmode("joystick_left_y", 1)
+        g.godmode("joystick_left_x", 1)
+        g.godmode("joystick_left_y", 0)
         r.update_position()
         s.draw()
         time.sleep(r.tick_rate)
