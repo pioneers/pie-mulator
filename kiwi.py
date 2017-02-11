@@ -3,6 +3,15 @@ import time
 from gamepad import *
 
 
+def setup():
+    pass
+
+
+def loop():
+    Robot.set_value("left_motor", -0.66)
+    Robot.set_value("right_motor", 1)
+
+
 class Robot:
     """The MODEL for this simulator. Stores robot data and handles position
        calculations & Runtime API calls """
@@ -205,7 +214,7 @@ class Screen:
         for y in range(5):
             pre_segment = []
             for x in range(len(parts_list)):
-                pre_segment.append(parts_list[x][y])
+                pre_segment.append(parts_list[x][y] + '  ')
             line_str = ''.join(pre_segment)
             result.append(line_str)
         return result
@@ -247,15 +256,27 @@ class Screen:
         print("X: %s, Y: %s, Theta: %s" % (self.robot.X, self.robot.Y, self.robot.dir))
 
 if __name__ == "__main__":
-    r = Robot()
+
+    Robot = Robot()
     g = Gamepad()
-    s = Screen(r, g)
+    s = Screen(Robot, g)
+
+    # Set the initial configuration of the gamepad
+    g.godmode("joystick_left_x", 1)
+    g.godmode("joystick_left_y", 0)
+
+
+    # Execute user-defined actions
+    setup()
 
     while True:
-        r.set_value("left_motor", -0.66)
-        r.set_value("right_motor", 1)
-        g.godmode("joystick_left_x", 1)
-        g.godmode("joystick_left_y", 0)
-        r.update_position()
+
+        # Execute user-defined actions
+        loop()
+
+        # Update the robot and print the new state to the screen
+        Robot.update_position()
         s.draw()
-        time.sleep(r.tick_rate)
+
+        # Wait the appropriate amount of time
+        time.sleep(Robot.tick_rate)
