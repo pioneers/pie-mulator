@@ -8,10 +8,11 @@ def setup():
 
 
 def loop():
-    Robot.set_value("left_motor", -0.66)
-    Robot.set_value("right_motor", 1)
+    Robot.set_value("left_motor", 0.7)
+    Robot.set_value("right_motor", -0.7)
 
 
+#######################################
 class Robot:
     """The MODEL for this simulator. Stores robot data and handles position
        calculations & Runtime API calls """
@@ -260,10 +261,6 @@ if __name__ == "__main__":
     Robot = Robot()
     g = Gamepad()
     s = Screen(Robot, g)
-
-    # Set the initial configuration of the gamepad
-    g.godmode("joystick_left_x", 1)
-    g.godmode("joystick_left_y", 0)
 
 
     # Execute user-defined actions
