@@ -42,15 +42,16 @@ class Gamepad:
         return Gamepad.theta(self.joystick_right_x, self.joystick_right_y)
 
     def theta(x, y):
+        """Convert cartesian to polar coordinates and return the radius."""
         if (x == 0 and y == 0):
             return "Neutral"
-        theta = math.degrees(math.atan(y / x))
         if x == 0:
             if y > 0:
                 return 90.0
             else:
                 return 270.0
-        elif x > 0:
+        theta = math.degrees(math.atan(y / x))
+        if x > 0:
             return theta
         else:
             return theta + 180.0
