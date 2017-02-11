@@ -20,7 +20,7 @@ class Robot:
         self.Wr = 0.0           # angular velocity of r wheel, degree/s
         self.ltheta = 0.0       # angular position of l wheel, degree
         self.rtheta = 0.0       # angular position of r wheel, degree
-        self.dir = 90.0         # Direction of the robot facing, degree
+        self.dir = 45.0         # Direction of the robot facing, degree
 
     """ Differential Drive Calculation Reference:
     https://chess.eecs.berkeley.edu/eecs149/documentation/differentialDrive.pdf
@@ -34,8 +34,7 @@ class Robot:
             distance = rv * Robot.tick_rate
             dx = distance * math.cos(radian)
             dy = distance * math.sin(radian)
-            print(dx)
-            print(dy)
+
         else:
             rt = Robot.width/2 * (lv+rv)/(rv-lv)
             Wt = (rv-lv)/Robot.width
@@ -81,36 +80,38 @@ class Camera:
 
         theta %= 360
         result = Camera.base.copy()
-        state = (round(theta / 45.0) + 2) % 8
+        state = (round(theta / 45.0) ) % 8
 
         result[2 * Camera.width + 4] = "*"
 
         if state == 0:
-            result[0 * Camera.width + 4] = "|"
-            result[1 * Camera.width + 4] = "|"
+            result[2 * Camera.width + 5] = "-"
+            result[2 * Camera.width + 6] = "-"
+            result[2 * Camera.width + 7] = "-"
         elif state == 1:
             result[0 * Camera.width + 8] = "/"
             result[1 * Camera.width + 6] = "/"
         elif state == 2:
-            result[2 * Camera.width + 5] = "-"
-            result[2 * Camera.width + 6] = "-"
-            result[2 * Camera.width + 7] = "-"
+            result[0 * Camera.width + 4] = "|"
+            result[1 * Camera.width + 4] = "|"
         elif state == 3:
-            result[3 * Camera.width + 6] = "\\"
-            result[4 * Camera.width + 8] = "\\"
+            result[0 * Camera.width + 0] = "\\"
+            result[1 * Camera.width + 2] = "\\"
         elif state == 4:
-            result[3 * Camera.width + 4] = "|"
-            result[4 * Camera.width + 4] = "|"
+            result[2 * Camera.width + 0] = "-"
+            result[2 * Camera.width + 1] = "-"
+            result[2 * Camera.width + 2] = "-"
         elif state == 5:
             result[3 * Camera.width + 2] = "/"
             result[4 * Camera.width + 0] = "/"
         elif state == 6:
-            result[2 * Camera.width + 0] = "-"
-            result[2 * Camera.width + 1] = "-"
-            result[2 * Camera.width + 2] = "-"
+            result[3 * Camera.width + 4] = "|"
+            result[4 * Camera.width + 4] = "|"
         elif state == 7:
-            result[0 * Camera.width + 0] = "\\"
-            result[1 * Camera.width + 2] = "\\"
+            result[3 * Camera.width + 6] = "\\"
+            result[4 * Camera.width + 8] = "\\"
+
+
         return Camera.str_format(result)
 
     def robot_direction(self):
@@ -221,7 +222,7 @@ class Screen:
         self.menu_bar()
         k = Screen.SCREEN_HEIGHT / 144.0  # screen scaling coefficient
         # print (self.robot.X*k)
-        for y in range(int(Screen.SCREEN_HEIGHT)):
+        for y in reversed(range(int(Screen.SCREEN_HEIGHT))):
             line = ["."] * int(Screen.SCREEN_WIDTH)
             for x in range(int(Screen.SCREEN_WIDTH)):
                 if ((self.robot.X * k) // 1 == x and (self.robot.Y * k) // 1 == y):
@@ -235,9 +236,10 @@ if __name__ == "__main__":
     s = Screen(r, g)
 
     while True:
-        r.set_value("left_motor", 1)
-        r.set_value("right_motor", -1)
-        g.godmode("joystick_left_x", .3)
+        r.set_value("left_motor", -1)
+        r.set_value("right_motor", 1)
+        g.godmode("joystick_left_x", 0.5)
+        g.godmode("joystick_left_y", 1)
         r.update_position()
         s.draw()
         time.sleep(r.tick_rate)
