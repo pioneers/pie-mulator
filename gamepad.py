@@ -2,16 +2,18 @@ import math
 import time
 
 class Gamepad:
+              #0, #1, #2, #3
+    sets = [[[ 0,  0,  0,  0],     #joystick_left_x
+             [ 1,  1, -1, -1],     #joystick_left_y
+             [ 0,  0,  0,  0],     #joystick_right_x
+             [ 1, -1, -1,  1],     #joystick_right_y
+             [ 1,  2,  3,  3]],    #Duration s
 
-    period = 3  #time period for each instruction, in sec
-    sets = [[[0,0,0,0],     #joystick_left_x
-             [1,1,-1,-1],     #joystick_left_y
-             [0,0,0,0],     #joystick_right_x
-             [1,-1,-1,1]],    #joystick_right_y
-            [[0,1,0,-1],
-             [1,0,-1,0],
-             [0,0,0,0],
-             [0,0,0,0]]
+            [[ 0,  1,  0, -1],
+             [ 1,  0, -1,  0],
+             [ 0,  0,  0,  0],
+             [ 0,  0,  0,  0],
+             [ 3,  3,  3,  3]]
             ]
 
 
@@ -22,20 +24,25 @@ class Gamepad:
         self.joystick_left_y =  Gamepad.sets[set_num][1]
         self.joystick_right_x =  Gamepad.sets[set_num][2]
         self.joystick_right_y =  Gamepad.sets[set_num][3]
+        self.durations = Gamepad.sets[set_num][4]         #lst of instr duration
+        self.i = 0                                        #index of insturction
 
     def get_value(self, device):
-        timePassed = time.time() - self.t0
-        i = int(timePassed // Gamepad.period)  % len(Gamepad.sets[self.set_num])
-        print(self.joystick_left_x)
+        now = time.time()
+        timePassed = now - self.t0
+        if  (timePassed >= self.durations[self.i]):
+            self.i = (self.i + 1) % len(self.durations)
+            self.t0 = now
+        print(timePassed)
 
         if (device == "joystick_left_x"):
-            return self.joystick_left_x[i]
+            return self.joystick_left_x[self.i]
         if (device == "joystick_left_y"):
-            return self.joystick_left_y[i]
+            return self.joystick_left_y[self.i]
         if (device == "joystick_right_x"):
-            return self.joystick_right_x[i]
+            return self.joystick_right_x[self.i]
         if (device == "joystick_right_y"):
-            return self.joystick_right_y[i]
+            return self.joystick_right_y[self.i]
         else:
             raise KeyError("Cannot find input: " + device)
 
