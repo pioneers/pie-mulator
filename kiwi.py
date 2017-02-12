@@ -197,8 +197,8 @@ class Camera:
 class Screen:
     """A visual representation of the field and menu"""
 
-    SCREEN_HEIGHT = 24
-    SCREEN_WIDTH = 24
+    SCREEN_HEIGHT = 48
+    SCREEN_WIDTH = 48
 
     def __init__(self, robot, gamepad):
         self.robot = robot

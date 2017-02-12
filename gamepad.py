@@ -26,7 +26,6 @@ class Gamepad:
     def get_value(self, device):
         timePassed = time.time() - self.t0
         i = int(timePassed // Gamepad.period)  % len(Gamepad.sets[self.set_num])
-        print(i)
         print(self.joystick_left_x)
 
         if (device == "joystick_left_x"):
