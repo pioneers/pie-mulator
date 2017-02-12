@@ -8,9 +8,10 @@ def setup():
 
 
 def loop():
-    Robot.set_value("left_motor", 0.7)
-    Robot.set_value("right_motor", -0.7)
-
+    # Robot.set_value("left_motor", 0.7)
+    # Robot.set_value("right_motor", -0.7)
+    Robot.set_value("left_motor", -g.get_value("joystick_left_y"))
+    Robot.set_value("right_motor", g.get_value("joystick_right_y"))
 
 #######################################
 class Robot:
@@ -196,8 +197,8 @@ class Camera:
 class Screen:
     """A visual representation of the field and menu"""
 
-    SCREEN_HEIGHT = 48
-    SCREEN_WIDTH = 48
+    SCREEN_HEIGHT = 24
+    SCREEN_WIDTH = 24
 
     def __init__(self, robot, gamepad):
         self.robot = robot
@@ -259,7 +260,7 @@ class Screen:
 if __name__ == "__main__":
 
     Robot = Robot()
-    g = Gamepad()
+    g = Gamepad(0)
     s = Screen(Robot, g)
 
 
