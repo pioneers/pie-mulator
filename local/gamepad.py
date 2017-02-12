@@ -1,50 +1,32 @@
 import math
 import time
+import pygame
 
 class Gamepad:
-              #0, #1, #2, #3
-    sets = [[[ 0,  0,  0,  0],     #joystick_left_x
-             [ 1,  1, -1, -1],     #joystick_left_y
-             [ 0,  0,  0,  0],     #joystick_right_x
-             [ 1, -1, -1,  1],     #joystick_right_y
-             [ 1,  2,  3,  3]],    #Duration s
-
-            [[ 0,  1,  0, -1],
-             [ 1,  0, -1,  0],
-             [ 0,  0,  0,  0],
-             [ 0,  0,  0,  0],
-             [ 3,  3,  3,  3]]
-            ]
-
-
-    def __init__(self, set_num):
-        self.set_num = set_num
-        self.t0 = time.time()
-        self.joystick_left_x = Gamepad.sets[set_num][0]
-        self.joystick_left_y =  Gamepad.sets[set_num][1]
-        self.joystick_right_x =  Gamepad.sets[set_num][2]
-        self.joystick_right_y =  Gamepad.sets[set_num][3]
-        self.durations = Gamepad.sets[set_num][4]         #lst of instr duration
-        self.i = 0                                        #index of insturction
+    tolerance = 0.15
+    def __init__(self):
+        pygame.display.init()
+        pygame.joystick.init()
+        self.joystick = pygame.joystick.Joystick(0)
+        self.joystick.init()
 
     def get_value(self, device):
-        now = time.time()
-        timePassed = now - self.t0
-        if  (timePassed >= self.durations[self.i]):
-            self.i = (self.i + 1) % len(self.durations)
-            self.t0 = now
-        #print(timePassed)
-
+        pygame.event.pump()
+        value = 0
         if (device == "joystick_left_x"):
-            return self.joystick_left_x[self.i]
-        if (device == "joystick_left_y"):
-            return self.joystick_left_y[self.i]
-        if (device == "joystick_right_x"):
-            return self.joystick_right_x[self.i]
-        if (device == "joystick_right_y"):
-            return self.joystick_right_y[self.i]
+            value = self.joystick.get_axis(0)
+        elif (device == "joystick_left_y"):
+            value = -self.joystick.get_axis(1)
+        elif (device == "joystick_right_x"):
+            value = self.joystick.get_axis(2)
+        elif (device == "joystick_right_y"):
+            value = -self.joystick.get_axis(3)
         else:
             raise KeyError("Cannot find input: " + device)
+        if abs(value) < Gamepad.tolerance:
+            value = 0
+        return value
+
 
     def godmode(self, device, value):
         if value > 1.0 or value < -1.0:
@@ -84,3 +66,18 @@ class Gamepad:
             return theta
         else:
             return theta + 180.0
+
+if __name__ == "__main__":
+    pygame.display.init()
+    pyJoy.init()
+    print(pyJoy.get_count())
+    controller = pyJoy.Joystick(0)
+    controller.init()
+    print( controller.get_id())
+    print(controller.get_name())
+    print(controller.get_numaxes())
+    while True:
+        pygame.event.pump()
+        for i in range(controller.get_numaxes()):
+            print(str(i) + " " + str(controller.get_axis(i)))
+        time.sleep(0.5)

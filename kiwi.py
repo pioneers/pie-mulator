@@ -8,10 +8,16 @@ def setup():
 
 
 def loop():
+    """Driving straight. """
     # Robot.set_value("left_motor", 0.7)
     # Robot.set_value("right_motor", -0.7)
-    Robot.set_value("left_motor", -g.get_value("joystick_left_y"))
-    Robot.set_value("right_motor", g.get_value("joystick_right_y"))
+    """Tank Drive"""
+    Robot.set_value("left_motor", -Gamepad.get_value("joystick_left_y"))
+    Robot.set_value("right_motor", Gamepad.get_value("joystick_right_y"))
+    """Arcade Drive"""
+    # turningSpeed =  Gamepad.get_value("joystick_left_x")
+    # Robot.set_value("left_motor", -(Gamepad.get_value("joystick_left_y") + turningSpeed))
+    # Robot.set_value("right_motor", Gamepad.get_value("joystick_left_y") - turningSpeed)
 
 #######################################
 class Robot:
@@ -58,7 +64,7 @@ class Robot:
             self.dir = (self.dir + math.degrees(theta)) % 360
         self.X = max(min(self.X + dx, Robot.MAX_X), 0)
         self.Y = max(min(self.Y + dy, Robot.MAX_Y), 0)
-        self.ltheta = (self.Wl * 5 + self.ltheta) % 360
+        self.ltheta = (self.Wl * 5 + self.ltheta) % 360 
         self.rtheta = (self.Wr * 5 + self.rtheta) % 360
 
     def set_value(self, device, speed):
@@ -260,8 +266,8 @@ class Screen:
 if __name__ == "__main__":
 
     Robot = Robot()
-    g = Gamepad(0)
-    s = Screen(Robot, g)
+    Gamepad = Gamepad(0)
+    s = Screen(Robot, Gamepad)
 
 
     # Execute user-defined actions
