@@ -1,10 +1,19 @@
-from pimulator import Robot, Gamepad, Simulator
+from pimulator import Robot, Gamepad, Actions, Simulator
+
+async def drive_fwd():
+    Robot.set_value("left_motor", 0.7)
+    Robot.set_value("right_motor", -0.7)
+    await Actions.sleep(1.0)
+    Robot.set_value("left_motor", 0.)
+    Robot.set_value("right_motor", -0.)
+    await Actions.sleep(1.0)
 
 def setup():
-    pass
-
+    Robot.run(drive_fwd)
 
 def loop():
+    if Robot.is_running(drive_fwd):
+        return # wait until it completes
     """Driving straight. """
     # Robot.set_value("left_motor", 0.7)
     # Robot.set_value("right_motor", -0.7)
