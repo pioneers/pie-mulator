@@ -1,26 +1,8 @@
 import math
 import time
-from gamepad import *
-
-
-def setup():
-    pass
-
-
-def loop():
-    """Driving straight. """
-    # Robot.set_value("left_motor", 0.7)
-    # Robot.set_value("right_motor", -0.7)
-    """Tank Drive"""
-    Robot.set_value("left_motor", -Gamepad.get_value("joystick_left_y"))
-    Robot.set_value("right_motor", Gamepad.get_value("joystick_right_y"))
-    """Arcade Drive"""
-    # turningSpeed =  Gamepad.get_value("joystick_left_x")
-    # Robot.set_value("left_motor", -(Gamepad.get_value("joystick_left_y") + turningSpeed))
-    # Robot.set_value("right_motor", Gamepad.get_value("joystick_left_y") - turningSpeed)
 
 #######################################
-class Robot:
+class RobotClass:
     """The MODEL for this simulator. Stores robot data and handles position
        calculations & Runtime API calls """
     tick_rate = 0.1             # in s
@@ -64,7 +46,7 @@ class Robot:
             self.dir = (self.dir + math.degrees(theta)) % 360
         self.X = max(min(self.X + dx, Robot.MAX_X), 0)
         self.Y = max(min(self.Y + dy, Robot.MAX_Y), 0)
-        self.ltheta = (self.Wl * 5 + self.ltheta) % 360 
+        self.ltheta = (self.Wl * 5 + self.ltheta) % 360
         self.rtheta = (self.Wr * 5 + self.rtheta) % 360
 
     def set_value(self, device, speed):
@@ -78,6 +60,91 @@ class Robot:
             self.Wr = speed * 9
         else:
             raise KeyError("Cannot find device name: " + device)
+
+class GamepadClass:
+              #0, #1, #2, #3
+    sets = [[[ 0,  0,  0,  0],     #joystick_left_x
+             [ 1,  1, -1, -1],     #joystick_left_y
+             [ 0,  0,  0,  0],     #joystick_right_x
+             [ 1, -1, -1,  1],     #joystick_right_y
+             [ 1,  2,  3,  3]],    #Duration s
+
+            [[ 0,  1,  0, -1],
+             [ 1,  0, -1,  0],
+             [ 0,  0,  0,  0],
+             [ 0,  0,  0,  0],
+             [ 3,  3,  3,  3]]
+            ]
+
+
+    def __init__(self, set_num):
+        self.set_num = set_num
+        self.t0 = time.time()
+        self.joystick_left_x = self.sets[set_num][0]
+        self.joystick_left_y =  self.sets[set_num][1]
+        self.joystick_right_x =  self.sets[set_num][2]
+        self.joystick_right_y =  self.sets[set_num][3]
+        self.durations = self.sets[set_num][4]         #lst of instr duration
+        self.i = 0                                        #index of insturction
+
+    def get_value(self, device):
+        now = time.time()
+        timePassed = now - self.t0
+        if  (timePassed >= self.durations[self.i]):
+            self.i = (self.i + 1) % len(self.durations)
+            self.t0 = now
+        #print(timePassed)
+
+        if (device == "joystick_left_x"):
+            return self.joystick_left_x[self.i]
+        if (device == "joystick_left_y"):
+            return self.joystick_left_y[self.i]
+        if (device == "joystick_right_x"):
+            return self.joystick_right_x[self.i]
+        if (device == "joystick_right_y"):
+            return self.joystick_right_y[self.i]
+        else:
+            raise KeyError("Cannot find input: " + device)
+
+    def godmode(self, device, value):
+        if value > 1.0 or value < -1.0:
+            raise ValueError("Value cannot be great than 1.0 or less than -1.0.")
+        if (device == "joystick_left_x"):
+            self.joystick_left_x = value
+        elif (device == "joystick_left_y"):
+            self.joystick_left_y = value
+        elif (device == "joystick_right_x"):
+            self.joystick_right_x = value
+        elif (device == "joystick_right_y"):
+            self.joystick_right_y = value
+        else:
+            raise KeyError("Cannot find input: " + device)
+
+    def ltheta(self):
+        return self.theta(
+                    self.get_value("joystick_left_x"),
+                        self.get_value("joystick_left_y"))
+
+    def rtheta(self):
+        return self.theta(
+                    self.get_value("joystick_right_x"),
+                        self.get_value("joystick_right_y"))
+
+    @staticmethod
+    def theta(x, y):
+        """Convert cartesian to polar coordinates and return the radius."""
+        if (x == 0 and y == 0):
+            return "Neutral"
+        if x == 0:
+            if y > 0:
+                return 90.0
+            else:
+                return 270.0
+        theta = math.degrees(math.atan(y / x))
+        if x > 0:
+            return theta
+        else:
+            return theta + 180.0
 
 
 class Camera:
@@ -203,8 +270,8 @@ class Camera:
 class Screen:
     """A visual representation of the field and menu"""
 
-    SCREEN_HEIGHT = 48
-    SCREEN_WIDTH = 48
+    SCREEN_HEIGHT = 36
+    SCREEN_WIDTH = 36
 
     def __init__(self, robot, gamepad):
         self.robot = robot
@@ -263,24 +330,32 @@ class Screen:
         print("__" * int(Screen.SCREEN_WIDTH))
         print("X: %s, Y: %s, Theta: %s" % (self.robot.X, self.robot.Y, self.robot.dir))
 
-if __name__ == "__main__":
-
-    Robot = Robot()
-    Gamepad = Gamepad(0)
-    s = Screen(Robot, Gamepad)
 
 
-    # Execute user-defined actions
-    setup()
+Robot = RobotClass()
+Gamepad = GamepadClass(0)
+s = Screen(Robot, Gamepad)
 
-    while True:
+class Simulator:
+    @staticmethod
+    def simulate(setup=None, loop=None):
+        import __main__
+        if setup is None:
+            setup = __main__.setup
+        if loop is None:
+            loop = __main__.loop
 
         # Execute user-defined actions
-        loop()
+        setup()
 
-        # Update the robot and print the new state to the screen
-        Robot.update_position()
-        s.draw()
+        while True:
 
-        # Wait the appropriate amount of time
-        time.sleep(Robot.tick_rate)
+            # Execute user-defined actions
+            loop()
+
+            # Update the robot and print the new state to the screen
+            Robot.update_position()
+            s.draw()
+
+            # Wait the appropriate amount of time
+            time.sleep(Robot.tick_rate)
