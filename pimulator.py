@@ -1,5 +1,9 @@
 import math
 import time
+import signal
+import inspect
+import asyncio
+import os
 
 #######################################
 class RobotClass:
@@ -21,6 +25,8 @@ class RobotClass:
         self.ltheta = 0.0       # angular position of l wheel, degree
         self.rtheta = 0.0       # angular position of r wheel, degree
         self.dir = 0.0         # Direction of the robot facing, degree
+
+        self._coroutines_running = set()
 
     """ Differential Drive Calculation Reference:
     https://chess.eecs.berkeley.edu/eecs149/documentation/differentialDrive.pdf
@@ -60,6 +66,55 @@ class RobotClass:
             self.Wr = speed * 9
         else:
             raise KeyError("Cannot find device name: " + device)
+
+    def run(self, fn, *args, **kwargs):
+        """
+        Starts a "coroutine", i.e. a series of actions that proceed
+        independently of the main loop of code.
+
+        The first argument must be a function defined with `async def`.
+
+        The remaining arguments are then passed to that function before it is
+        called.
+
+        Multiple simultaneous coroutines that use the same robot actuators will
+        lead to surprising behavior. To help guard against errors, calling
+        `Robot.run` with a `fn` argument that is currently running is a no-op.
+        """
+
+        if not inspect.isfunction(fn):
+            raise ValueError("First argument to Robot.run must be a function")
+        elif not inspect.iscoroutinefunction(fn):
+            raise ValueError("First argument to Robot.run must be defined with `async def`, not `def`")
+
+        if fn in self._coroutines_running:
+            return
+
+        self._coroutines_running.add(fn)
+
+        future = fn(*args, **kwargs)
+
+        async def wrapped_future():
+            await future
+            self._coroutines_running.remove(fn)
+
+        # asyncio.ensure_future(wrapped_future())
+        asyncio.ensure_future(wrapped_future())
+
+    def is_running(self, fn):
+        """
+        Returns True if the given `fn` is already running as a coroutine.
+
+        See: Robot.run
+        """
+
+        if not inspect.isfunction(fn):
+            raise ValueError("First argument to Robot.is_running must be a function")
+        elif not inspect.iscoroutinefunction(fn):
+            raise ValueError("First argument to Robot.is_running must be defined with `async def`, not `def`")
+
+        return fn in self._coroutines_running
+
 
 class GamepadClass:
               #0, #1, #2, #3
@@ -331,31 +386,202 @@ class Screen:
         print("X: %s, Y: %s, Theta: %s" % (self.robot.X, self.robot.Y, self.robot.dir))
 
 
+class TimeoutError(Exception):
+    pass
+
+class RuntimeError(Exception):
+    pass
+
+TIMEOUT_VALUE = 1 # seconds?
+
+def start_watchdog():
+    signal.alarm(TIMEOUT_VALUE)
+
+def feed_watchdog():
+    signal.alarm(0) # is this redundant?
+    signal.alarm(TIMEOUT_VALUE)
+
+def ensure_is_function(tag, val):
+    if inspect.iscoroutinefunction(val):
+        raise RuntimeError("{} is defined with `async def` instead of `def`".format(tag))
+    if not inspect.isfunction(val):
+        raise RuntimeError("{} is not a function".format(tag))
+
+def ensure_not_overridden(module, name):
+    if hasattr(module, name):
+        raise RuntimeError("Student code overrides `{}`, which is part of the API".format(name))
+
+def clarify_coroutine_warnings(exception_cell):
+    """
+    Python's default error checking will print warnings of the form:
+        RuntimeWarning: coroutine '???' was never awaited
+
+    This function will inject an additional clarification message about what
+    such a warning means.
+    """
+    import warnings
+
+    default_showwarning = warnings.showwarning
+
+    def custom_showwarning(message, category, filename, lineno, file=None, line=None):
+        default_showwarning(message, category, filename, lineno, line)
+
+        if str(message).endswith('was never awaited'):
+            coro_name = str(message).split("'")[-2]
+
+            print("""
+The PiE API has upgraded the above RuntimeWarning to a runtime error!
+
+This error typically occurs in one of the following cases:
+
+1. Calling `Actions.sleep` or anything in `Actions` without using `await`.
+
+Incorrect code:
+    async def my_coro():
+        Actions.sleep(1.0)
+
+Consider instead:
+    async def my_coro():
+        await Actions.sleep(1.0)
+
+2. Calling an `async def` function from inside `setup` or `loop` without using
+`Robot.run`.
+
+Incorrect code:
+    def loop():
+        my_coro()
+
+Consider instead:
+    def loop():
+        Robot.run(my_coro)
+""".format(coro_name=coro_name), file=file)
+            exception_cell[0] = message
+
+    warnings.showwarning = custom_showwarning
+
+def _ensure_strict_semantics(fn):
+    """
+    (Internal): provides additional error checking for the PiE API
+    """
+    if not inspect.iscoroutinefunction(fn):
+        raise Exception("Internal runtime error: _ensure_strict_semantics can only be applied to `async def` functions")
+
+    def wrapped_fn(*args, **kwargs):
+        # Ensure that this function is called directly out of the event loop,
+        # and not out of the `setup` and `loop` functions.
+        stack = inspect.stack()
+        try:
+            for frame in stack:
+                if os.path.basename(frame.filename) == "base_events.py" and frame.function == "_run_once":
+                    # We've hit the event loop, so everything is good
+                    break
+                elif os.path.basename(frame.filename) == "pimulator.py" and frame.function == 'simulate':
+                    # We've hit the runtime before hitting the event loop, which
+                    # is bad
+                    print(stack)
+
+                    raise Exception("Call to `{}` must be inside an `async def` function called using `Robot.run`".format(fn.__name__))
+        finally:
+            del stack
+        return fn(*args, **kwargs)
+
+    return wrapped_fn
+
+class ActionsClass:
+    """
+    This class contains a series of pre-specified actions that a robot can
+    perform. These actions should be used inside a coroutine using an `await`
+    statement, e.g. `await Actions.sleep(1.0)`
+    """
+
+    def __init__(self, robot):
+        self._robot = robot
+
+    @_ensure_strict_semantics
+    async def sleep(self, seconds):
+        """
+        Waits for specified number of `seconds`
+        """
+
+        await asyncio.sleep(seconds)
+
+#######################################
 
 Robot = RobotClass()
 Gamepad = GamepadClass(0)
+Actions = ActionsClass(Robot)
 s = Screen(Robot, Gamepad)
 
 class Simulator:
     @staticmethod
-    def simulate(setup=None, loop=None):
-        import __main__
-        if setup is None:
-            setup = __main__.setup
-        if loop is None:
-            loop = __main__.loop
+    def simulate(setup_fn=None, loop_fn=None):
+        def timeout_handler(signum, frame):
+            raise TimeoutError("studentCode timed out")
+        signal.signal(signal.SIGALRM, timeout_handler)
 
-        # Execute user-defined actions
-        setup()
+        # Need to pass a value by reference, so use a list as a kind of "pointer" cell
+        exception_cell = [None]
 
-        while True:
+        clarify_coroutine_warnings(exception_cell)
 
-            # Execute user-defined actions
-            loop()
+        try:
+            start_watchdog()
+            feed_watchdog()
 
-            # Update the robot and print the new state to the screen
-            Robot.update_position()
-            s.draw()
+            if setup_fn is None:
+                try:
+                    import __main__
+                    setup_fn = __main__.setup
+                except AttributeError:
+                    raise RuntimeError("Student code failed to define `setup`")
 
-            # Wait the appropriate amount of time
-            time.sleep(Robot.tick_rate)
+            if loop_fn is None:
+                try:
+                    import __main__
+                    loop_fn = __main__.loop
+                except AttributeError:
+                    raise RuntimeError("Student code failed to define `loop`")
+
+            ensure_is_function("setup", setup_fn)
+            ensure_is_function("loop", loop_fn)
+
+            feed_watchdog()
+
+            # Note that this implementation does not attempt to re-start student
+            # code on failure
+
+            setup_fn()
+            feed_watchdog()
+
+            # Now time to start the main event loop
+            import asyncio
+
+            async def main_loop():
+                while exception_cell[0] is None:
+                    next_call = loop.time() + Robot.tick_rate # run at 20 Hz
+                    loop_fn()
+                    feed_watchdog()
+
+                    # Simulator drawing operation
+                    Robot.update_position()
+                    s.draw()
+
+                    sleep_time = max(next_call - loop.time(), 0.)
+                    await asyncio.sleep(sleep_time)
+
+                raise exception_cell[0]
+
+            loop = asyncio.get_event_loop()
+
+            def my_exception_handler(loop, context):
+                if exception_cell[0] is None:
+                    exception_cell[0] = context['exception']
+
+            loop.set_exception_handler(my_exception_handler)
+            loop.run_until_complete(main_loop())
+        except TimeoutError:
+            print("ERROR: student code timed out")
+            raise
+        except:
+            print("ERROR: student code terminated due to an exception")
+            raise
