@@ -1,6 +1,9 @@
 import math
 import time
 
+# Gamepad Options: use "arcade" or "tank"
+GAMEPAD_MODE = "tank"
+
 #######################################
 class RobotClass:
     """The MODEL for this simulator. Stores robot data and handles position
@@ -333,7 +336,10 @@ class Screen:
 
 
 Robot = RobotClass()
-Gamepad = GamepadClass(0)
+control_types = ['tank', 'arcade']
+control_type_index = control_types.index(GAMEPAD_MODE)
+assert (control_type_index != -1) , "Invalid gamepad mode"
+Gamepad = GamepadClass(control_type_index)
 s = Screen(Robot, Gamepad)
 
 class Simulator:
