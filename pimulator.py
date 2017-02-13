@@ -512,7 +512,7 @@ class ActionsClass:
 #######################################
 
 Robot = RobotClass()
-control_types = ['tank', 'arcade']
+control_types = ['tank', 'arcade', 'other1', 'other2']
 control_type_index = control_types.index(GAMEPAD_MODE)
 assert (control_type_index != -1) , "Invalid gamepad mode"
 Gamepad = GamepadClass(control_type_index)
