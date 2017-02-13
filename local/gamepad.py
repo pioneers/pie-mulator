@@ -16,11 +16,11 @@ class Gamepad:
         if (device == "joystick_left_x"):
             value = self.joystick.get_axis(0)
         elif (device == "joystick_left_y"):
-            value = -self.joystick.get_axis(1)
+            value = self.joystick.get_axis(1)
         elif (device == "joystick_right_x"):
             value = self.joystick.get_axis(2)
         elif (device == "joystick_right_y"):
-            value = -self.joystick.get_axis(3)
+            value = self.joystick.get_axis(3)
         else:
             raise KeyError("Cannot find input: " + device)
         if abs(value) < Gamepad.tolerance:
@@ -45,12 +45,12 @@ class Gamepad:
     def ltheta(self):
         return Gamepad.theta(
                     self.get_value("joystick_left_x"),
-                        self.get_value("joystick_left_y"))
+                        -self.get_value("joystick_left_y"))
 
     def rtheta(self):
         return Gamepad.theta(
                     self.get_value("joystick_right_x"),
-                        self.get_value("joystick_right_y"))
+                        -self.get_value("joystick_right_y"))
 
     def theta(x, y):
         """Convert cartesian to polar coordinates and return the radius."""
