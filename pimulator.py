@@ -6,7 +6,9 @@ import asyncio
 import os
 
 # Gamepad Options: use "arcade" or "tank"
-GAMEPAD_MODE = "tank"
+GAMEPAD_MODE = "arcade"
+SCREEN_HEIGHT = 48
+SCREEN_WIDTH = 48
 
 #######################################
 class RobotClass:
@@ -377,15 +379,16 @@ class Screen:
         """Draw the screen."""
         Screen.clear_screen()
         self.menu_bar()
-        k = Screen.SCREEN_HEIGHT / 144.0  # screen scaling coefficient
+        ky = SCREEN_HEIGHT / 144.0  # screen scaling coefficient
+        kx = SCREEN_WIDTH / 144.0  # screen scaling coefficient
         # print (self.robot.X*k)
-        for y in reversed(range(int(Screen.SCREEN_HEIGHT))):
-            line = ["."] * int(Screen.SCREEN_WIDTH)
-            for x in range(int(Screen.SCREEN_WIDTH)):
-                if ((self.robot.X * k) // 1 == x and (self.robot.Y * k) // 1 == y):
+        for y in reversed(range(int(SCREEN_HEIGHT))):
+            line = ["."] * int(SCREEN_WIDTH)
+            for x in range(int(SCREEN_WIDTH)):
+                if ((self.robot.X * kx) // 1 == x and (self.robot.Y * ky) // 1 == y):
                     line[x] = self.symbol()
             print(' '.join(line))
-        print("__" * int(Screen.SCREEN_WIDTH))
+        print("__" * int(SCREEN_WIDTH))
         print("X: %s, Y: %s, Theta: %s" % (self.robot.X, self.robot.Y, self.robot.dir))
 
 
