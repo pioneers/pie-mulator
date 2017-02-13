@@ -478,8 +478,6 @@ def _ensure_strict_semantics(fn):
                 elif os.path.basename(frame.filename) == "pimulator.py" and frame.function == 'simulate':
                     # We've hit the runtime before hitting the event loop, which
                     # is bad
-                    print(stack)
-
                     raise Exception("Call to `{}` must be inside an `async def` function called using `Robot.run`".format(fn.__name__))
         finally:
             del stack
