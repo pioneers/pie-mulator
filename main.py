@@ -17,15 +17,15 @@ def loop():
 
     driving_mode = 0
 
-    if driving_mode = 0:
+    if driving_mode == 0:
         """Driving straight. """
         # Robot.set_value("left_motor", 0.7)
         # Robot.set_value("right_motor", -0.7)
-    elif driving_mode = 1:
+    elif driving_mode == 1:
         """Tank Drive"""
         # Robot.set_value("left_motor", Gamepad.get_value("joystick_left_y"))
         # Robot.set_value("right_motor", -Gamepad.get_value("joystick_right_y"))
-    elif driving_mode = 2:
+    elif driving_mode == 2:
         """Arcade Drive"""
         turningSpeed =  Gamepad.get_value("joystick_left_x")
         left_y = -Gamepad.get_value("joystick_left_y")
