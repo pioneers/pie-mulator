@@ -4,9 +4,10 @@ import signal
 import inspect
 import asyncio
 import os
+from termcolor import colored
 
 # Gamepad Options: use "arcade" or "tank"
-GAMEPAD_MODE = "arcade"
+GAMEPAD_MODE = "tank"
 SCREEN_HEIGHT = 48
 SCREEN_WIDTH = 48
 
@@ -303,11 +304,11 @@ class Camera:
 
     def right_wheel(self):
         """Return a list of strings picturing the right wheel"""
-        return Camera.wheel(self.robot.rtheta, 'R')
+        return [colored(x , 'red') for x in Camera.wheel(self.robot.rtheta, 'R')]
 
     def left_wheel(self):
         """Return a list of strings picturing the left wheel"""
-        return Camera.wheel(self.robot.ltheta, 'L')
+        return [colored(x, 'red') for x in Camera.wheel(self.robot.ltheta, 'L')]
 
     def str_format(list_img):
         """Return a list of 5 strings each of length 9
@@ -386,7 +387,7 @@ class Screen:
             line = ["."] * int(SCREEN_WIDTH)
             for x in range(int(SCREEN_WIDTH)):
                 if ((self.robot.X * kx) // 1 == x and (self.robot.Y * ky) // 1 == y):
-                    line[x] = self.symbol()
+                    line[x] = colored(self.symbol(), 'red')
             print(' '.join(line))
         print("__" * int(SCREEN_WIDTH))
         print("X: %s, Y: %s, Theta: %s" % (self.robot.X, self.robot.Y, self.robot.dir))
