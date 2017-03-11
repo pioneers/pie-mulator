@@ -61,11 +61,13 @@ class RobotClass:
         self.ltheta = (self.Wl * 5 + self.ltheta) % 360
         self.rtheta = (self.Wr * 5 + self.rtheta) % 360
 
-    def set_value(self, device, speed):
+    def set_value(self, device, param, speed):
         """Runtime API method for updating L/R motor speed. Takes only L/R
            Motor as device name and speed bounded by [-1,1]."""
         if speed > 1.0 or speed < -1.0:
             raise ValueError("Speed cannot be great than 1.0 or less than -1.0.")
+        if param != "duty_cycle":
+            raise ValueError('"duty_cycle" is the only currently supported parameter')
         if device == "left_motor":
             self.Wl = speed * 9
         elif device == "right_motor":
@@ -550,8 +552,8 @@ class Simulator:
                 except AttributeError:
                     raise RuntimeError("Student code failed to define `loop`")
 
-            ensure_is_function("setup", setup_fn)
-            ensure_is_function("loop", loop_fn)
+            ensure_is_function("teleop_setup", setup_fn)
+            ensure_is_function("teleop_main", loop_fn)
 
             feed_watchdog()
 
