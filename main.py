@@ -5,7 +5,6 @@ def teleop_setup():
     Robot.set_value("left_motor", "duty_cycle", 1)
     Robot.set_value("right_motor", "duty_cycle", -1)
 
-
 def teleop_main():
     pass
 
