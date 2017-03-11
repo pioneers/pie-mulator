@@ -2,7 +2,6 @@ import math
 import time
 import signal
 import inspect
-import asyncio
 import os
 from termcolor import colored
 
@@ -12,6 +11,7 @@ SCREEN_HEIGHT = 48
 SCREEN_WIDTH = 48
 
 #######################################
+
 class RobotClass:
     """The MODEL for this simulator. Stores robot data and handles position
        calculations & Runtime API calls """
@@ -61,11 +61,13 @@ class RobotClass:
         self.ltheta = (self.Wl * 5 + self.ltheta) % 360
         self.rtheta = (self.Wr * 5 + self.rtheta) % 360
 
-    def set_value(self, device, speed):
+    def set_value(self, device, param, speed):
         """Runtime API method for updating L/R motor speed. Takes only L/R
            Motor as device name and speed bounded by [-1,1]."""
         if speed > 1.0 or speed < -1.0:
             raise ValueError("Speed cannot be great than 1.0 or less than -1.0.")
+        if param != "duty_cycle":
+            raise ValueError("duty_cycle is the only currently supported parameter")
         if device == "left_motor":
             self.Wl = speed * 9
         elif device == "right_motor":
@@ -87,25 +89,7 @@ class RobotClass:
         lead to surprising behavior. To help guard against errors, calling
         `Robot.run` with a `fn` argument that is currently running is a no-op.
         """
-
-        if not inspect.isfunction(fn):
-            raise ValueError("First argument to Robot.run must be a function")
-        elif not inspect.iscoroutinefunction(fn):
-            raise ValueError("First argument to Robot.run must be defined with `async def`, not `def`")
-
-        if fn in self._coroutines_running:
-            return
-
-        self._coroutines_running.add(fn)
-
-        future = fn(*args, **kwargs)
-
-        async def wrapped_future():
-            await future
-            self._coroutines_running.remove(fn)
-
-        # asyncio.ensure_future(wrapped_future())
-        asyncio.ensure_future(wrapped_future())
+        pass
 
     def is_running(self, fn):
         """
@@ -113,13 +97,7 @@ class RobotClass:
 
         See: Robot.run
         """
-
-        if not inspect.isfunction(fn):
-            raise ValueError("First argument to Robot.is_running must be a function")
-        elif not inspect.iscoroutinefunction(fn):
-            raise ValueError("First argument to Robot.is_running must be defined with `async def`, not `def`")
-
-        return fn in self._coroutines_running
+        return False
 
 
 class GamepadClass:
@@ -409,10 +387,7 @@ def feed_watchdog():
     signal.alarm(TIMEOUT_VALUE)
 
 def ensure_is_function(tag, val):
-    if inspect.iscoroutinefunction(val):
-        raise RuntimeError("{} is defined with `async def` instead of `def`".format(tag))
-    if not inspect.isfunction(val):
-        raise RuntimeError("{} is not a function".format(tag))
+    pass
 
 def ensure_not_overridden(module, name):
     if hasattr(module, name):
@@ -492,32 +467,12 @@ def _ensure_strict_semantics(fn):
 
     return wrapped_fn
 
-class ActionsClass:
-    """
-    This class contains a series of pre-specified actions that a robot can
-    perform. These actions should be used inside a coroutine using an `await`
-    statement, e.g. `await Actions.sleep(1.0)`
-    """
-
-    def __init__(self, robot):
-        self._robot = robot
-
-    @_ensure_strict_semantics
-    async def sleep(self, seconds):
-        """
-        Waits for specified number of `seconds`
-        """
-
-        await asyncio.sleep(seconds)
-
-#######################################
 
 Robot = RobotClass()
 control_types = ['tank', 'arcade', 'other1', 'other2']
 control_type_index = control_types.index(GAMEPAD_MODE)
 assert (control_type_index != -1) , "Invalid gamepad mode"
 Gamepad = GamepadClass(control_type_index)
-Actions = ActionsClass(Robot)
 s = Screen(Robot, Gamepad)
 
 class Simulator:
@@ -564,7 +519,7 @@ class Simulator:
             # Now time to start the main event loop
             import asyncio
 
-            async def main_loop():
+            def main_loop():
                 while exception_cell[0] is None:
                     next_call = loop.time() + Robot.tick_rate # run at 20 Hz
                     loop_fn()
@@ -575,7 +530,7 @@ class Simulator:
                     s.draw()
 
                     sleep_time = max(next_call - loop.time(), 0.)
-                    await asyncio.sleep(sleep_time)
+                    time.sleep(sleep_time)
 
                 raise exception_cell[0]
 
