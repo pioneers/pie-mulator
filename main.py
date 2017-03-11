@@ -2,7 +2,8 @@ from pimulator import Robot, Gamepad, Simulator
 
 
 def teleop_setup():
-    pass
+    Robot.set_value("left_motor", "duty_cycle", 1)
+    Robot.set_value("right_motor", "duty_cycle", -1)
 
 
 def teleop_main():
