@@ -61,6 +61,26 @@ class Robot(object):
     wheel_base = list("* - - - *|       ||   x   ||       |* - - - *")
     width = 9
 
+    def get_value(device_name, param):
+        """Gets a reading from the robot"""
+
+        if device_name == "limit_switch":
+            if not (param == "switch0" or param == "swtich1" or param == "switch2"):
+                raise ValueError("%s is not a valid paramter." % param)
+            return Robot.limit_switch()
+        if device_name == "line_follower":
+            if not (param == "left" or param == "center" or param == "right"):
+                raise ValueError("%s is not a valid paramter." % param)
+            return Robot.line_follower()
+        if device_name == "potentiometer":
+            pass
+        if device_name == "YogiBear":
+            pass
+        if device_name == "RFID":
+            pass
+        else:
+            raise ValueError("%s is not a valid device" % device_name)
+
     def str_format(list_img):
         """Return a list of 5 strings each of length 9
 
