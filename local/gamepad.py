@@ -4,28 +4,78 @@ import pygame
 
 class Gamepad:
     tolerance = 0.15
+    inputMode = False #True = joystick
     def __init__(self):
         pygame.display.init()
         pygame.joystick.init()
-        self.joystick = pygame.joystick.Joystick(0)
-        self.joystick.init()
+        if pygame.joystick.get_count():
+            self.joystick = pygame.joystick.Joystick(0)
+            self.joystick.init()
+            Gamepad.inputMode = True
+        else:
+            self.joystick_left_x = 0
+            self.joystick_left_y = 0
+            self.joystick_right_x = 0
+            self.joystick_right_y = 0
 
     def get_value(self, device):
         pygame.event.pump()
-        value = 0
-        if (device == "joystick_left_x"):
-            value = self.joystick.get_axis(0)
-        elif (device == "joystick_left_y"):
-            value = self.joystick.get_axis(1)
-        elif (device == "joystick_right_x"):
-            value = self.joystick.get_axis(2)
-        elif (device == "joystick_right_y"):
-            value = self.joystick.get_axis(3)
+        if Gamepad.inputMode:
+            if (device == "joystick_left_x"):
+                value = self.joystick.get_axis(0)
+            elif (device == "joystick_left_y"):
+                value = self.joystick.get_axis(1)
+            elif (device == "joystick_right_x"):
+                value = self.joystick.get_axis(2)
+            elif (device == "joystick_right_y"):
+                value = self.joystick.get_axis(3)
+            else:
+                raise KeyError("Cannot find input: " + device)
+            if abs(value) < Gamepad.tolerance:
+                value = 0
         else:
-            raise KeyError("Cannot find input: " + device)
-        if abs(value) < Gamepad.tolerance:
-            value = 0
+            updateKeys()
+            if (device == "joystick_left_x"):
+                value = self.joystick_left_x
+            elif (device == "joystick_left_y"):
+                value = self.joystick_left_y
+            elif (device == "joystick_right_x"):
+                value = self.joystick_right_x
+            elif (device == "joystick_right_y"):
+                value = self.joystick_right_y
+            else:
+                raise KeyError("Cannot find input: " + device)
         return value
+    def updateKeys(self):
+        keys = pygame.key.get_pressed()
+        print(keys)
+        # if keys[pygame.K_w] and !keys[pygame.K_s]:
+        #     self.joystick_left_y = -1
+        # elif keys[pygame.K_s] and !keys[pygame.K_w]:
+        #     self.joystick_left_y = 1
+        # else:
+        #     self.joystick_left_y = 0
+        #
+        # if keys[pygame.K_a] and !keys[pygame.K_d]:
+        #     self.joystick_left_x = -1
+        # elif keys[pygame.K_d] and !keys[pygame.K_a]:
+        #     self.joystick_left_x = 1
+        # else:
+        #     self.joystick_left_x = 0
+        #
+        # if keys[pygame.K_i] and !keys[pygame.K_k]:
+        #     self.joystick_right_y = -1
+        # elif keys[pygame.K_k] and !keys[pygame.K_i]:
+        #     self.joystick_right_y = 1
+        # else:
+        #     self.joystick_right_y = 0
+        #
+        # if keys[pygame.K_j] and !keys[pygame.K_l]:
+        #     self.joystick_right_x = -1
+        # elif keys[pygame.K_l] and !keys[pygame.K_j]:
+        #     self.joystick_right_x = 1
+        # else:
+        #     self.joystick_right_x = 0
 
 
     def godmode(self, device, value):
@@ -69,11 +119,11 @@ class Gamepad:
 
 if __name__ == "__main__":
     pygame.display.init()
-    pyJoy.init()
-    print(pyJoy.get_count())
-    controller = pyJoy.Joystick(0)
+    pygame.joystick.init()
+    print(pygame.joystick.get_count())
+    controller = pygame.joystick.Joystick(0)
     controller.init()
-    print( controller.get_id())
+    print(controller.get_id())
     print(controller.get_name())
     print(controller.get_numaxes())
     while True:
