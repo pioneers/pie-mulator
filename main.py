@@ -42,4 +42,5 @@ def teleop_main():
 
 
 # Do not delete the line below: it runs the simulator!
+# Simulator.simulate(teleop_setup, teleop_main)
 Simulator.simulate(teleop_setup, teleop_main)

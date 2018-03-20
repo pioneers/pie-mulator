@@ -62,8 +62,9 @@ class RobotClass:
         self.rtheta = (self.Wr * 5 + self.rtheta) % 360
 
     def set_value(self, device, param, speed):
-        """Runtime API method for updating L/R motor speed. Takes only L/R
-           Motor as device name and speed bounded by [-1,1]."""
+        """Runtime API method for updating L/R motor speed. 
+        
+        Takes only L/R Motor as device name and speed bounded by [-1,1]."""
         if speed > 1.0 or speed < -1.0:
             raise ValueError("Speed cannot be great than 1.0 or less than -1.0.")
         if param != "duty_cycle":
@@ -90,12 +91,7 @@ class RobotClass:
         `Robot.run` with a `fn` argument that is currently running is a no-op.
         """
 
-        if not inspect.isfunction(fn):
-            raise ValueError("First argument to Robot.run must be a function")
-        elif not inspect.iscoroutinefunction(fn):
-            raise ValueError("First argument to Robot.run must be defined with `async def`, not `def`")
-
-        if fn in self._coroutines_running:
+        if self.is_running(fn):
             return
 
         self._coroutines_running.add(fn)
@@ -145,7 +141,7 @@ class GamepadClass:
         self.t0 = time.time()
         self.joystick_left_x = self.sets[set_num][0]
         self.joystick_left_y =  self.sets[set_num][1]
-        self.joystick_right_x =  self.sets[set_num][2]
+        self.joystick_right_x =  self.sets[set_num][3]
         self.joystick_right_y =  self.sets[set_num][3]
         self.durations = self.sets[set_num][4]         #lst of instr duration
         self.i = 0                                        #index of insturction
@@ -404,13 +400,16 @@ class RuntimeError(Exception):
 TIMEOUT_VALUE = 1 # seconds?
 
 def start_watchdog():
+    """Set a timer for TIMEOUT_VALUE seconds"""
     signal.alarm(TIMEOUT_VALUE)
 
 def feed_watchdog():
+    """Reset a timer for TIMEOUT_VALUE seconds"""
     signal.alarm(0) # is this redundant?
     signal.alarm(TIMEOUT_VALUE)
 
-def ensure_is_function(tag, val):
+def ensure_is_coroute_function(tag, val):
+    """Ensure val is a coroutine function."""
     if inspect.iscoroutinefunction(val):
         raise RuntimeError("{} is defined with `async def` instead of `def`".format(tag))
     if not inspect.isfunction(val):
@@ -421,49 +420,50 @@ def ensure_not_overridden(module, name):
         raise RuntimeError("Student code overrides `{}`, which is part of the API".format(name))
 
 def clarify_coroutine_warnings(exception_cell):
-    """
+    """ Inject an additional clarification message about coroutine warning.
+
     Python's default error checking will print warnings of the form:
         RuntimeWarning: coroutine '???' was never awaited
-
-    This function will inject an additional clarification message about what
-    such a warning means.
     """
     import warnings
 
     default_showwarning = warnings.showwarning
 
     def custom_showwarning(message, category, filename, lineno, file=None, line=None):
+        """Show the original warning along with our custom warning."""
         default_showwarning(message, category, filename, lineno, line)
 
         if str(message).endswith('was never awaited'):
             coro_name = str(message).split("'")[-2]
 
-            print("""
-The PiE API has upgraded the above RuntimeWarning to a runtime error!
+            display_message = ("The PiE API has upgraded the above "
+                    "RuntimeWarning to a runtime error!\n\n"
 
-This error typically occurs in one of the following cases:
+                    "This error typically occurs in one of the these cases:\n\n"
 
-1. Calling `Actions.sleep` or anything in `Actions` without using `await`.
+                    "1. Calling `Actions.sleep` or anything in `Actions` "
+                    "without using `await`.\n\n"
 
-Incorrect code:
-    async def my_coro():
-        Actions.sleep(1.0)
+                    "Incorrect code:\n"
+                    "   async def my_coro():\n"
+                    "       Actions.sleep(1.0)\n\n"
 
-Consider instead:
-    async def my_coro():
-        await Actions.sleep(1.0)
+                    "Consider instead:\n"
+                    "   async def my_coro():\n"
+                    "       await Actions.sleep(1.0)\n\n"
 
-2. Calling an `async def` function from inside `setup` or `loop` without using
-`Robot.run`.
+                    "2. Calling an `async def` function from inside `setup` \n"
+                    "or `loop` without using `Robot.run`.\n\n"
 
-Incorrect code:
-    def loop():
-        my_coro()
+                    "Incorrect code:\n"
+                    "   def loop():\n"
+                    "       my_coro()\n\n"
 
-Consider instead:
-    def loop():
-        Robot.run(my_coro)
-""".format(coro_name=coro_name), file=file)
+                    "Consider instead:\n"
+                    "   def loop():\n"
+                    "       Robot.run(my_coro)\n")
+
+            print(display_message.format(coro_name=coro_name), file=file)
             exception_cell[0] = message
 
     warnings.showwarning = custom_showwarning
@@ -523,11 +523,18 @@ Actions = ActionsClass(Robot)
 s = Screen(Robot, Gamepad)
 
 class Simulator:
+    def __init__(self):
+
+    def timeout_handler(signum, frame):
+        """Take action if student code takes too long"""
+        raise TimeoutError("studentCode timed out")
+
     @staticmethod
     def simulate(setup_fn=None, loop_fn=None):
-        def timeout_handler(signum, frame):
-            raise TimeoutError("studentCode timed out")
-        signal.signal(signal.SIGALRM, timeout_handler)
+
+
+        # Start timeout_handder when the alarm goes off
+        signal.signal(signal.SIGALRM, Simulator.timeout_handler)
 
         # Need to pass a value by reference, so use a list as a kind of "pointer" cell
         exception_cell = [None]
@@ -538,22 +545,8 @@ class Simulator:
             start_watchdog()
             feed_watchdog()
 
-            if setup_fn is None:
-                try:
-                    import __main__
-                    setup_fn = __main__.setup
-                except AttributeError:
-                    raise RuntimeError("Student code failed to define `setup`")
-
-            if loop_fn is None:
-                try:
-                    import __main__
-                    loop_fn = __main__.loop
-                except AttributeError:
-                    raise RuntimeError("Student code failed to define `loop`")
-
-            ensure_is_function("teleop_setup", setup_fn)
-            ensure_is_function("teleop_main", loop_fn)
+            ensure_is_coroute_function("teleop_setup", setup_fn)
+            ensure_is_coroute_function("teleop_main", loop_fn)
 
             feed_watchdog()
 
@@ -564,8 +557,6 @@ class Simulator:
             feed_watchdog()
 
             # Now time to start the main event loop
-            import asyncio
-
             async def main_loop():
                 while exception_cell[0] is None:
                     next_call = loop.time() + Robot.tick_rate # run at 20 Hz
