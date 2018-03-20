@@ -505,37 +505,29 @@ class Simulator:
         raise self.exception_cell[0]
 
     def simulate(self, setup_fn=None, loop_fn=None):
-        try:
-            start_watchdog()
-            feed_watchdog()
+        start_watchdog()
+        feed_watchdog()
 
-            ensure_is_coroute_function("teleop_setup", setup_fn)
-            ensure_is_coroute_function("teleop_main", loop_fn)
+        ensure_is_coroute_function("teleop_setup", setup_fn)
+        ensure_is_coroute_function("teleop_main", loop_fn)
 
-            feed_watchdog()
+        feed_watchdog()
 
-            # Note that this implementation does not attempt to re-start student
-            # code on failure
+        # Note that this implementation does not attempt to restart student
+        # code on failure
 
-            setup_fn()
-            feed_watchdog()
+        setup_fn()
+        feed_watchdog()
 
-            # Now time to start the main event loop
-            
-            self.loop = asyncio.get_event_loop()
+        # Start the main event loop
+        self.loop = asyncio.get_event_loop()
 
-            def my_exception_handler(loop, context):
-                if exception_cell[0] is None:
-                    exception_cell[0] = context['exception']
+        def my_exception_handler(loop, context):
+            if exception_cell[0] is None:
+                exception_cell[0] = context['exception']
 
-            self.loop.set_exception_handler(my_exception_handler)
-            self.loop.run_until_complete(self.main_loop(loop_fn))
-        except TimeoutError:
-            print("ERROR: student code timed out")
-            raise
-        except:
-            print("ERROR: student code terminated due to an exception")
-            raise
+        self.loop.set_exception_handler(my_exception_handler)
+        self.loop.run_until_complete(self.main_loop(loop_fn))
 
     def clarify_coroutine_warnings(self):
         """ Inject an additional clarification message about coroutine warning.
